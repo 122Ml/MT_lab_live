@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+backend/.venv/
+backend/.venv312/
+
+# Node
+node_modules/
+frontend-vue/node_modules/
+frontend-react/node_modules/
+dist/
+models/
+
+# SMT runtime artifacts
+backend/smt_model/*
+!backend/smt_model/README.md
+
+# Env
+.env
+backend/.env
+
+# IDE
+.idea/
+.vscode/

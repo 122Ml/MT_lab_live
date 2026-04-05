@@ -1,0 +1,24 @@
+[
+  {
+    "id": "idiom_01",
+    "source": "我也是醉了",
+    "reference": "I'm speechless.",
+    "src_lang": "zh",
+    "tgt_lang": "en"
+  },
+  {
+    "id": "ambiguity_01",
+    "source": "他在银行旁边的河岸上等我。",
+    "reference": "He waited for me on the river bank next to the bank.",
+    "src_lang": "zh",
+    "tgt_lang": "en"
+  },
+  {
+    "id": "colloquial_01",
+    "source": "这个问题有点难搞。",
+    "reference": "This problem is a bit tricky.",
+    "src_lang": "zh",
+    "tgt_lang": "en"
+  }
+]
+
