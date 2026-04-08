@@ -51,6 +51,26 @@ def discover_moses_bin_from_root(moses_root: str | None) -> Path | None:
     return None
 
 
+def discover_niutrans_decoder(niutrans_root: str | None, niutrans_bin: str | None) -> Path | None:
+    if niutrans_bin:
+        path = resolve_path(niutrans_bin)
+        if path.exists() and path.is_file():
+            return path
+    if not niutrans_root:
+        return None
+    root = resolve_path(niutrans_root)
+    candidates = [
+        root / "bin" / "NiuTrans.Decoder.exe",
+        root / "bin" / "NiuTrans.Decoder",
+        root / "NiuTrans.Decoder.exe",
+        root / "NiuTrans.Decoder",
+    ]
+    for candidate in candidates:
+        if candidate.exists() and candidate.is_file():
+            return candidate
+    return None
+
+
 def looks_like_resource_path(token: str) -> bool:
     stripped = token.strip().strip('"').strip("'")
     if not stripped:
@@ -170,7 +190,8 @@ def main() -> None:
 
     if settings.smt_enabled:
         print("\n== SMT runtime checks ==")
-        if settings.smt_mode.lower() == "local":
+        smt_mode = settings.smt_mode.lower()
+        if smt_mode in {"local", "auto"}:
             if settings.smt_moses_bin:
                 ok, label, resolved = check_file(settings.smt_moses_bin, "SMT_MOSES_BIN")
                 if ok:
@@ -183,36 +204,81 @@ def main() -> None:
                 if discovered:
                     print(f"[OK] SMT_MOSES_ROOT resolved bin: {discovered}")
                 else:
+                    if smt_mode == "local":
+                        has_blockers = True
+                        print("[MISS] SMT local Moses binary not found from SMT_MOSES_ROOT")
+                    else:
+                        print("[WARN] SMT local Moses binary not found from SMT_MOSES_ROOT (auto mode)")
+
+        if smt_mode in {"niutrans", "auto"}:
+            niutrans_decoder = discover_niutrans_decoder(settings.smt_niutrans_root, settings.smt_niutrans_bin)
+            if niutrans_decoder:
+                print(f"[OK] NiuTrans decoder: {niutrans_decoder}")
+            else:
+                if smt_mode == "niutrans":
                     has_blockers = True
-                    print("[MISS] SMT local Moses binary not found from SMT_MOSES_ROOT")
+                    print("[MISS] NiuTrans decoder not found (SMT_NIUTRANS_BIN/SMT_NIUTRANS_ROOT)")
+                else:
+                    print("[WARN] NiuTrans decoder not found (auto mode)")
+
+            if settings.smt_niutrans_config:
+                niutrans_config = resolve_path(settings.smt_niutrans_config)
+                if niutrans_config.exists():
+                    print(f"[OK] NiuTrans config: {niutrans_config}")
+                else:
+                    if smt_mode == "niutrans":
+                        has_blockers = True
+                        print(f"[MISS] NiuTrans config missing: {niutrans_config}")
+                    else:
+                        print(f"[WARN] NiuTrans config missing (auto mode): {niutrans_config}")
 
         moses_ini_path = resolve_path(settings.smt_model_dir) / "moses.ini"
-        if moses_ini_path.exists():
-            print(f"[OK] SMT model package: {moses_ini_path}")
-            referenced_paths = extract_paths_from_moses_ini(moses_ini_path)
-            if referenced_paths:
-                missing_refs = [path for path in referenced_paths if not path.exists()]
-                if missing_refs:
-                    has_blockers = True
-                    print("[MISS] SMT moses.ini referenced files missing:")
-                    for missing in missing_refs:
-                        print(f"       - {missing}")
+        if smt_mode in {"local", "docker", "auto"}:
+            if moses_ini_path.exists():
+                print(f"[OK] SMT model package: {moses_ini_path}")
+                referenced_paths = extract_paths_from_moses_ini(moses_ini_path)
+                if referenced_paths:
+                    missing_refs = [path for path in referenced_paths if not path.exists()]
+                    if missing_refs:
+                        if smt_mode in {"local", "docker"}:
+                            has_blockers = True
+                            print("[MISS] SMT moses.ini referenced files missing:")
+                            for missing in missing_refs:
+                                print(f"       - {missing}")
+                        else:
+                            print("[WARN] SMT moses.ini referenced files missing (auto mode):")
+                            for missing in missing_refs:
+                                print(f"       - {missing}")
+                    else:
+                        print(f"[OK] SMT moses.ini references: {len(referenced_paths)} files exist")
                 else:
-                    print(f"[OK] SMT moses.ini references: {len(referenced_paths)} files exist")
+                    print("[WARN] SMT moses.ini has no detectable file references")
             else:
-                print("[WARN] SMT moses.ini has no detectable file references")
-        else:
-            has_blockers = True
-            print(f"[MISS] SMT model package missing moses.ini: {moses_ini_path}")
-            example_path = moses_ini_path.with_suffix(".ini.example")
-            if example_path.exists():
-                print(f"       Hint: copy template first -> {example_path.name} to moses.ini")
+                if smt_mode in {"local", "docker"}:
+                    has_blockers = True
+                    print(f"[MISS] SMT model package missing moses.ini: {moses_ini_path}")
+                else:
+                    print(f"[WARN] SMT model package missing moses.ini (auto mode): {moses_ini_path}")
+                example_path = moses_ini_path.with_suffix(".ini.example")
+                if example_path.exists():
+                    print(f"       Hint: copy template first -> {example_path.name} to moses.ini")
 
-        kenlm_candidate = resolve_path(settings.smt_model_dir) / "lm.binary"
-        if kenlm_candidate.exists():
-            print(f"[OK] KenLM binary: {kenlm_candidate}")
-        else:
-            print(f"[WARN] KenLM binary not found (optional check): {kenlm_candidate}")
+            kenlm_candidate = resolve_path(settings.smt_model_dir) / "lm.binary"
+            if kenlm_candidate.exists():
+                print(f"[OK] KenLM binary: {kenlm_candidate}")
+            else:
+                print(f"[WARN] KenLM binary not found (optional check): {kenlm_candidate}")
+
+        if smt_mode in {"lite", "auto"}:
+            lite_model = resolve_path(settings.smt_lite_model_path)
+            lite_seed = resolve_path(settings.smt_lite_seed_path)
+            if lite_model.exists():
+                print(f"[OK] SMT lite model: {lite_model}")
+            elif lite_seed.exists():
+                print(f"[OK] SMT lite seed: {lite_seed}")
+            else:
+                has_blockers = True
+                print(f"[MISS] SMT lite resources missing: {lite_model} and {lite_seed}")
 
     for label, model_name, required in model_checks:
         ok, missing, detail = check_dir(model_name, required)
@@ -226,6 +292,12 @@ def main() -> None:
             print("       Please set this env value to a local model folder path.")
         else:
             print(f"       Missing files: {', '.join(missing)}")
+
+    nmt_rules_path = resolve_path(settings.nmt_en_zh_rules_path)
+    if nmt_rules_path.exists():
+        print(f"[OK] NMT en->zh rules: {nmt_rules_path}")
+    else:
+        print(f"[WARN] NMT en->zh rules missing: {nmt_rules_path}")
 
     if has_blockers:
         print("\nResolve missing items, then run this script again.")

@@ -1,0 +1,57 @@
+# src_lang	tgt_lang	source	target
+zh	en	你好	hello
+zh	en	谢谢	thank you
+zh	en	再见	goodbye
+zh	en	请	please
+zh	en	我	I
+zh	en	你	you
+zh	en	他	he
+zh	en	她	she
+zh	en	我们	we
+zh	en	他们	they
+zh	en	喜欢	like
+zh	en	爱	love
+zh	en	学习	study
+zh	en	机器翻译	machine translation
+zh	en	人工智能	artificial intelligence
+zh	en	大模型	large model
+zh	en	系统	system
+zh	en	模型	model
+zh	en	测试	test
+zh	en	结果	result
+zh	en	任务	task
+zh	en	速度	speed
+zh	en	准确率	accuracy
+zh	en	质量	quality
+zh	en	我喜欢人工智能	I like artificial intelligence
+zh	en	我对这片大地爱得深沉	I deeply love this land
+zh	en	这个问题有点难搞	this problem is a bit tricky
+zh	en	捡了芝麻丢了西瓜	penny wise, pound foolish
+zh	en	他坐在河岸上，看着河水流淌。	he sat on the riverbank and watched the river flow.
+zh	en	她去银行存钱。	she went to the bank to deposit money.
+en	zh	hello	你好
+en	zh	thank you	谢谢
+en	zh	goodbye	再见
+en	zh	please	请
+en	zh	I	我
+en	zh	you	你
+en	zh	he	他
+en	zh	she	她
+en	zh	we	我们
+en	zh	they	他们
+en	zh	like	喜欢
+en	zh	love	爱
+en	zh	study	学习
+en	zh	machine translation	机器翻译
+en	zh	artificial intelligence	人工智能
+en	zh	large model	大模型
+en	zh	system	系统
+en	zh	model	模型
+en	zh	test	测试
+en	zh	result	结果
+en	zh	task	任务
+en	zh	speed	速度
+en	zh	accuracy	准确率
+en	zh	quality	质量
+en	zh	he sat on the riverbank and watched the river flow.	他坐在河岸上，看着河水流淌。
+en	zh	she went to the bank to deposit money.	她去银行存钱。

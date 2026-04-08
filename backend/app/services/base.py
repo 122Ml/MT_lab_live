@@ -7,6 +7,7 @@ class TranslationOutput:
     text: str
     ready: bool = True
     error: str | None = None
+    meta: dict[str, str | int | float | bool | None] | None = None
 
 
 class BaseEngine(ABC):

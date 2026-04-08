@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -17,7 +18,19 @@ async def lifespan(app: FastAPI):
     app.state.engine_manager = EngineManager(settings)
     app.state.evaluator = EvaluatorService()
     app.state.test_case_service = TestCaseService()
+    warmup_task = None
+    if settings.warmup_on_start:
+        warmup_task = asyncio.create_task(
+            app.state.engine_manager.warmup(
+                text=settings.warmup_text,
+                src_lang=settings.warmup_src_lang,
+                tgt_lang=settings.warmup_tgt_lang,
+            )
+        )
+        app.state.warmup_task = warmup_task
     yield
+    if warmup_task is not None and not warmup_task.done():
+        warmup_task.cancel()
 
 
 app = FastAPI(title=settings.app_name, version="0.2.0", lifespan=lifespan)

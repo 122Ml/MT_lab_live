@@ -8,6 +8,10 @@ from app.schemas.translation import (
     EngineResult,
     EvaluateRequest,
     EvaluateResponse,
+    LlmMultimodalRequest,
+    LlmMultimodalResponse,
+    LlmSettings,
+    LlmSettingsUpdate,
     TestCaseItem,
     TranslateRequest,
     TranslateResponse,
@@ -66,6 +70,20 @@ async def engines(manager: EngineManager = Depends(get_engine_manager)) -> dict[
     return manager.status()
 
 
+@router.get("/settings/llm", response_model=LlmSettings)
+async def get_llm_settings(manager: EngineManager = Depends(get_engine_manager)) -> LlmSettings:
+    return LlmSettings(**manager.get_llm_settings())
+
+
+@router.put("/settings/llm", response_model=LlmSettings)
+async def update_llm_settings(
+    payload: LlmSettingsUpdate,
+    manager: EngineManager = Depends(get_engine_manager),
+) -> LlmSettings:
+    updated = manager.update_llm_settings(payload.model_dump(exclude_none=True))
+    return LlmSettings(**updated)
+
+
 @router.post("/translate", response_model=TranslateResponse)
 async def translate(
     payload: TranslateRequest,
@@ -86,6 +104,24 @@ async def translate(
         reference=payload.reference,
         results=results,
     )
+
+
+@router.post("/llm/process", response_model=LlmMultimodalResponse)
+async def llm_process(
+    payload: LlmMultimodalRequest,
+    manager: EngineManager = Depends(get_engine_manager),
+) -> LlmMultimodalResponse:
+    result = await manager.run_llm_multimodal(
+        modality=payload.modality,
+        text=payload.text,
+        src_lang=payload.src_lang,
+        tgt_lang=payload.tgt_lang,
+        prompt=payload.prompt,
+        media_base64=payload.media_base64,
+        media_mime_type=payload.media_mime_type,
+        media_url=payload.media_url,
+    )
+    return LlmMultimodalResponse(modality=payload.modality, result=result)
 
 
 @router.post("/batch_translate")

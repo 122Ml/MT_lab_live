@@ -18,6 +18,7 @@ class TransformerEngine(BaseEngine):
         self._tokenizer = None
         self._load_error: str | None = None
         self._lock = asyncio.Lock()
+        self._device = self._detect_device()
 
     def status(self) -> tuple[bool, str]:
         if not self.enabled:
@@ -27,9 +28,9 @@ class TransformerEngine(BaseEngine):
         if self._load_error:
             return False, self._load_error
         if self._model is not None and self._tokenizer is not None:
-            return True, f"loaded: {self.model_name}"
+            return True, f"loaded: {self.model_name} (device={self._device})"
         mode = "local-only" if self.local_files_only else "allow-download"
-        return True, f"ready (lazy load, mode={mode})"
+        return True, f"ready (lazy load, mode={mode}, device={self._device})"
 
     async def translate(self, text: str, src_lang: str, tgt_lang: str) -> TranslationOutput:
         if not self.enabled:
@@ -78,8 +79,12 @@ class TransformerEngine(BaseEngine):
 
             def load_model() -> tuple[object, object]:
                 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+                import torch
 
                 model_ref = self._resolve_model_ref(self.model_name)
+                model_kwargs: dict[str, object] = {}
+                if self._device == "cuda":
+                    model_kwargs["torch_dtype"] = torch.float16
 
                 tokenizer = AutoTokenizer.from_pretrained(
                     model_ref,
@@ -90,12 +95,24 @@ class TransformerEngine(BaseEngine):
                     model_ref,
                     local_files_only=self.local_files_only,
                     cache_dir=self.cache_dir,
+                    **model_kwargs,
                 )
+                if self._device == "cuda":
+                    model = model.to("cuda")
                 return model, tokenizer
 
             try:
                 model, tokenizer = await asyncio.to_thread(load_model)
             except Exception as exc:
+                if self._device == "cuda":
+                    try:
+                        self._device = "cpu"
+                        model, tokenizer = await asyncio.to_thread(load_model)
+                        self._model = model
+                        self._tokenizer = tokenizer
+                        return True
+                    except Exception:
+                        pass
                 hint = " (please download model files manually first)" if self.local_files_only else ""
                 self._load_error = f"Transformer load failed for {self.model_name}: {exc}{hint}"
                 return False
@@ -110,15 +127,29 @@ class TransformerEngine(BaseEngine):
         if tokenizer is None or model is None:
             raise RuntimeError("model is not loaded")
 
+        import torch
+
         tokenizer.src_lang = src_code
         encoded = tokenizer(text, return_tensors="pt", truncation=True)
-        generated = model.generate(
-            **encoded,
-            forced_bos_token_id=tokenizer.convert_tokens_to_ids(tgt_code),
-            max_new_tokens=256,
-        )
+        if self._device == "cuda":
+            encoded = {key: value.to("cuda") for key, value in encoded.items()}
+        with torch.inference_mode():
+            generated = model.generate(
+                **encoded,
+                forced_bos_token_id=tokenizer.convert_tokens_to_ids(tgt_code),
+                max_new_tokens=256,
+            )
         decoded = tokenizer.batch_decode(generated, skip_special_tokens=True)
         return decoded[0].strip() if decoded else text
+
+    @staticmethod
+    def _detect_device() -> str:
+        try:
+            import torch
+
+            return "cuda" if torch.cuda.is_available() else "cpu"
+        except Exception:
+            return "cpu"
 
     @staticmethod
     def _is_local_model_dir(model_ref: str) -> bool:

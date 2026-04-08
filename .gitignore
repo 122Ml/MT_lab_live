@@ -16,6 +16,13 @@ models/
 backend/smt_model/*
 !backend/smt_model/README.md
 
+# Local corpora / dictionaries (manual download, not for git)
+backend/data/ebmt/
+backend/data/rbmt/
+
+# Local SMT toolchain (manual install, large files)
+tools/NiuTrans.SMT/
+
 # Env
 .env
 backend/.env

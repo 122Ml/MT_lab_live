@@ -20,6 +20,9 @@
 - 多引擎状态检测（ready/not ready/error）
 - Vue 与 React 两套前端展示
 - “圆角哲学”视觉风格（渐变、玻璃态、状态徽标）
+- Vue 前端支持多模态输入：`text / image / audio / video`（后三者走 `llm_api`）
+- 支持 LLM 多模态设置面板（模型与 Prompt 可在线配置）
+- React 前端已对齐上述多模态与设置能力
 
 ---
 
@@ -70,12 +73,28 @@ MT-Lab Live/
 - PowerShell `5+` 或 `7+`
 - （可选）Docker：用于 `SMT_MODE=docker`
 - （可选）本地 `mosesdecoder`：用于 `SMT_MODE=local`
+- （推荐）`SMT_MODE=auto`：优先 `local` / `docker`，自动回退 `lite`（无需 `moses.ini` 也可跑通）
 
 > 默认策略是离线优先：`HF_LOCAL_FILES_ONLY=true`，不会自动下载模型。
 
 ---
 
 ## 5. 快速开始（推荐）
+
+### 5.0 模型准备（ModelScope）
+
+先安装 `modelscope`（建议清华源）：
+
+```powershell
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple modelscope
+```
+
+四个模型下载链接（对应本项目多引擎路线）：
+
+- `Helsinki-NLP/opus-mt-zh-en`：`https://modelscope.cn/models/Helsinki-NLP/opus-mt-zh-en`
+- `Helsinki-NLP/opus-mt-en-zh`：`https://modelscope.cn/models/Helsinki-NLP/opus-mt-en-zh`
+- `facebook/nllb-200-distilled-600M`：`https://modelscope.cn/models/facebook/nllb-200-distilled-600M`
+- `facebook/m2m100_418M`（Transformer 备选）：`https://modelscope.cn/models/facebook/m2m100_418M`
 
 ### 5.1 一键启动开发环境
 
@@ -163,22 +182,35 @@ npm run dev
 - `NMT_ENABLED=true`
 - `NMT_MODEL_ZH_EN`
 - `NMT_MODEL_EN_ZH`
+- `NMT_EN_ZH_RULES_PATH=./data/nmt_en_zh_rules.tsv`
 - `TRANSFORMER_ENABLED=false`（默认关闭）
 - `TRANSFORMER_MODEL`
 
 ### SMT（Moses + KenLM）
 
 - `SMT_ENABLED=true`
-- `SMT_MODE=local` 或 `docker`
+- `SMT_MODE=auto`（推荐）/ `local` / `niutrans` / `docker` / `lite`
 - `SMT_MOSES_ROOT` / `SMT_MOSES_BIN`
+- `SMT_NIUTRANS_ROOT` / `SMT_NIUTRANS_BIN` / `SMT_NIUTRANS_CONFIG`
 - `SMT_MODEL_DIR=./smt_model`
 - `SMT_DOCKER_IMAGE=moses-smt:latest`
+- `SMT_LITE_MODEL_PATH=./smt_model/lite_phrase_table.json`
+- `SMT_LITE_SEED_PATH=./data/smt_lite_seed.tsv`
+- `SMT_LITE_MAX_CEDICT_ENTRIES=120000`
 
 ### LLM API（OpenAI 兼容格式）
 
 - `OPENAI_BASE_URL`
 - `OPENAI_API_KEY`
 - `OPENAI_MODEL`
+- `OPENAI_IMAGE_MODEL`
+- `OPENAI_AUDIO_MODEL`
+- `OPENAI_VIDEO_MODEL`
+- `OPENAI_TEXT_PROMPT`
+- `OPENAI_IMAGE_PROMPT`
+- `OPENAI_AUDIO_PROMPT`
+- `OPENAI_VIDEO_PROMPT`
+- `OPENAI_MEDIA_MAX_BASE64_CHARS`
 
 前端模板：
 
@@ -211,12 +243,16 @@ npm run dev
 - `start_dev.ps1`：一键拉起前后端（自动处理端口）
 - `verify_project.ps1`：项目检查（编译、模型就绪、冒烟、前端构建）
 - `configure_smt_env.ps1`：快速写入 SMT 相关 `.env`
+  - 支持 `-Mode auto|local|niutrans|docker|lite`
+- `build_niutrans_decoder_in_docker.ps1`：在 Docker 内编译 `NiuTrans.Decoder`
 - `sync_modelscope_cache.ps1`：从 ModelScope 本地缓存同步模型
 
 目录：`backend/scripts`
 
 - `check_model_ready.py`：检查模型/SMT 资源是否就绪
+- `prepare_smt_lite_model.py`：从种子 TSV + CEDICT 构建 `lite_phrase_table.json`
 - `smoke_test_api.py`：API 冒烟测试
+- `acceptance_full_chain.py`：全链路验收（每种方法出结果 + text/image/audio/video）
 - `warmup_models.py`：模型预热（可选）
 
 ---
@@ -228,9 +264,12 @@ npm run dev
 - `GET /health`
 - `GET /api/v1/engines`
 - `GET /api/v1/test_cases`
+- `GET /api/v1/settings/llm`
 - `POST /api/v1/translate`
 - `POST /api/v1/batch_translate`
 - `POST /api/v1/evaluate`
+- `PUT /api/v1/settings/llm`
+- `POST /api/v1/llm/process`
 
 示例：
 

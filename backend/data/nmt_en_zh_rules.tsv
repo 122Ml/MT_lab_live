@@ -1,0 +1,45 @@
+# regex_pattern	replacement
+# 说明：按顺序匹配，越具体的规则应放在越前面。
+
+# ===== MT / NLP 术语 =====
+\bneural machine translation\b	神经机器翻译
+\bstatistical machine translation\b	统计机器翻译
+\brule[- ]based machine translation\b	基于规则的机器翻译
+\bmachine translation\b	机器翻译
+\bartificial intelligence\b	人工智能
+\blarge language model(s)?\b	大语言模型
+\blarge model(s)?\b	大模型
+\btransformer model(s)?\b	Transformer模型
+\btranslation memory\b	翻译记忆库
+\bpost[- ]editing\b	后编辑
+\bterminology\b	术语
+\bsource language\b	源语言
+\btarget language\b	目标语言
+\balignment\b	对齐
+\bparallel corpus\b	平行语料
+\bmonolingual corpus\b	单语语料
+\bdomain adaptation\b	领域自适应
+\bword sense disambiguation\b	词义消歧
+\bbeam search\b	束搜索
+\btokenization\b	分词
+\bdetokenization\b	反分词
+\bback translation\b	回译
+\bdeep learning\b	深度学习
+\bneural network(s)?\b	神经网络
+
+# ===== 歧义与示例句 =====
+\briverbank\b	河岸
+\bbank account\b	银行账户
+\bdeposit money\b	存钱
+\briver flow\b	河水流淌
+\bwatch(ed|ing)?\b	看着
+\bthis problem is a bit tricky\b	这个问题有点棘手
+\bpenny wise, pound foolish\b	因小失大
+
+# ===== 高频基础词（演示可选）=====
+\bI\b	我
+\byou\b	你
+\bhe\b	他
+\bshe\b	她
+\bwe\b	我们
+\bthey\b	他们
