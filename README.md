@@ -89,19 +89,21 @@ MT-Lab Live/
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple modelscope
 ```
 
-四个模型下载链接（对应本项目多引擎路线）：
+使用 `modelscope` 命令下载模型（示例）：
 
-- `Helsinki-NLP/opus-mt-zh-en`：`https://modelscope.cn/models/Helsinki-NLP/opus-mt-zh-en`
-- `Helsinki-NLP/opus-mt-en-zh`：`https://modelscope.cn/models/Helsinki-NLP/opus-mt-en-zh`
-- `facebook/nllb-200-distilled-600M`：`https://modelscope.cn/models/facebook/nllb-200-distilled-600M`
-- `facebook/m2m100_418M`（Transformer 备选）：`https://modelscope.cn/models/facebook/m2m100_418M`
+```powershell
+modelscope download --model Helsinki-NLP/opus-mt-zh-en
+modelscope download --model Helsinki-NLP/opus-mt-en-zh
+modelscope download --model facebook/nllb-200-distilled-600M
+modelscope download --model facebook/m2m100_418M
+```
 
 ### 5.1 一键启动开发环境
 
 在项目根目录执行：
 
 ```powershell
-Set-Location 'F:\Spark_Incubator\新建文件夹\MT-Lab Live\scripts'
+Set-Location .\scripts
 .\start_dev.ps1
 ```
 
